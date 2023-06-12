@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 
 import static java.lang.System.out;
 import java.sql.Connection;
@@ -136,17 +137,28 @@ public class Program {
         String[] arguments2 = new String[]{"kubectl" ,"exec", "-it", peer,  "--" ,"/bin/bash" ,"-c", "peer chaincode query -C channel1 -n cc -c \'{\"Args\":[\"add\",\"" + id + "\"]}\' "};
         
         Process proc2 = new ProcessBuilder(arguments2).start();
-        try (InputStream inputStream = proc2.getInputStream();
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
-                    String line = bufferedReader.readLine();
-                    if (line != null) System.out.println("line: " + line);
-                    if (line != null && line.length() > 0) return 0;
-                    return -1;
-
-        } catch (Exception e) {
-            System.out.println(e);
+        try {
+            proc2.waitFor();
+            if (query(id) >= 0){
+                return 0;
+            }
+            else{
+                return -1;
+            }
+        } catch (InterruptedException e) {
             return -1;
         }
+        // try (InputStream inputStream = proc2.getInputStream();
+        //         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+        //             String line = bufferedReader.readLine();
+        //             if (line != null) System.out.println("line: " + line);
+        //             if (line != null && line.length() > 0) return 0;
+        //             return -1;
+
+        // } catch (Exception e) {
+        //     System.out.println(e);
+        //     return -1;
+        // }
     }
 
     static Boolean verify(Virus virus){ //pseudo code to fake virus verification
@@ -156,9 +168,7 @@ public class Program {
         return false;
     }
 
-    static int addVirus(Virus virus) throws IOException {
-        String id = virus.publicKey.toString();
-        
+    static int addVirus(String id, Virus virus) throws IOException {
         Boolean b = id.matches(Constants.ID_REGEX);
         if (!b) return -1;
         String peer = get_peer(Constants.PEER_REGEX);
@@ -192,9 +202,8 @@ public class Program {
         }
     }
 
-    static int transfer(Transfer transfer) throws IOException {
-        String sender = transfer.senderPublicKey.toString();
-        String receiver = transfer.receiverPublicKey.toString();
+    static int transfer(String sender, Transfer transfer) throws IOException {
+        String receiver = transfer.receiverPublicBigInt.toString(16);
         long value = transfer.value;
         Boolean b = sender.matches(Constants.ID_REGEX);
         if (!b) return -1;

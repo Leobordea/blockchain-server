@@ -8,12 +8,16 @@ import java.io.PushbackInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 /**
  *
  * @author Mancitiss
  */
 public class Tools {
-
     /**
      *
      * @param DIS

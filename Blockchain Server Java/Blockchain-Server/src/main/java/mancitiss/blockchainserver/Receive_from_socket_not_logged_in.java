@@ -1,26 +1,13 @@
 package mancitiss.blockchainserver;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-
-import org.bouncycastle.pqc.math.linearalgebra.BigIntUtils;
-import org.web3j.abi.datatypes.Int;
-import org.web3j.crypto.Credentials;
-import org.web3j.crypto.ECKeyPair;
-import org.web3j.crypto.Hash;
-import org.web3j.crypto.Sign;
-import org.web3j.utils.Numeric;
+import java.security.KeyFactory;
+import java.security.PublicKey;
 
 import com.google.gson.Gson;
-
-import okhttp3.internal.ws.RealWebSocket.Message;
 
 import java.net.Socket;
 
@@ -49,15 +36,17 @@ public class Receive_from_socket_not_logged_in implements Runnable {
                     //System.out.println(serialized);
                     Gson gson = new Gson();
                     SignedObject obj = gson.fromJson(serialized, SignedObject.class);
-                    BigInteger publicKey = gson.fromJson(obj.objectString, BigInteger.class);
+                    CustomECKeySpec spec = gson.fromJson(obj.objectString, CustomECKeySpec.class);
 
-                    MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    byte[] digest = md.digest(obj.objectString.getBytes(StandardCharsets.US_ASCII));
+                    KeyFactory kf = KeyFactory.getInstance("EC");
+                    PublicKey publicKey = kf.generatePublic(spec.getPublicKeySpec());
 
-                    if (!EthersUtils.verifyMessage(digest, obj.signature, publicKey))
+                    byte[] digest = obj.objectString.getBytes(StandardCharsets.US_ASCII);
+
+                    if (!EthersUtils.verifySignature(digest, obj.signature, publicKey))
                         throw new Exception("Signature doesn't match");
 
-                    String id = publicKey.toString();
+                    String id = (new BigInteger(publicKey.getEncoded())).toString(16);
                     System.out.println(id);
                     int result = Program.addKey(id);
                     if (result == 0)
@@ -67,7 +56,6 @@ public class Receive_from_socket_not_logged_in implements Runnable {
                     DOS.close();
                     DIS.close();
                     client.close();
-                    System.out.println("Success");
                 }
                 else if (instruction.equals("0001")){ // fetch coin
                     System.out.println("fetch");
@@ -75,15 +63,17 @@ public class Receive_from_socket_not_logged_in implements Runnable {
                     //System.out.println(serialized);
                     Gson gson = new Gson();
                     SignedObject obj = gson.fromJson(serialized, SignedObject.class);
-                    BigInteger publicKey = gson.fromJson(obj.objectString, BigInteger.class);
+                    CustomECKeySpec spec = gson.fromJson(obj.objectString, CustomECKeySpec.class);
 
-                    MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    byte[] digest = md.digest(obj.objectString.getBytes(StandardCharsets.US_ASCII));
+                    KeyFactory kf = KeyFactory.getInstance("EC");
+                    PublicKey publicKey = kf.generatePublic(spec.getPublicKeySpec());
+                    
+                    byte[] digest = obj.objectString.getBytes(StandardCharsets.US_ASCII);
 
-                    if (!EthersUtils.verifyMessage(digest, obj.signature, publicKey))
+                    if (!EthersUtils.verifySignature(digest, obj.signature, publicKey))
                         throw new Exception("Signature doesn't match");
 
-                    String id = publicKey.toString();
+                    String id = (new BigInteger(publicKey.getEncoded())).toString(16);
                     System.out.println(id);
                     int result = Program.query(id);
                     DOS.write(Tools.combine(
@@ -102,14 +92,14 @@ public class Receive_from_socket_not_logged_in implements Runnable {
                     SignedObject obj = gson.fromJson(serialized, SignedObject.class);
                     Virus virus = gson.fromJson(obj.objectString, Virus.class);
 
-                    MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    byte[] digest = md.digest(obj.objectString.getBytes(StandardCharsets.US_ASCII));
+                    KeyFactory kf = KeyFactory.getInstance("EC");
+                    PublicKey publicKey = kf.generatePublic(virus.publicKey.getPublicKeySpec());
 
-                    if (!EthersUtils.verifyMessage(digest, obj.signature, virus.publicKey))
+                    byte[] digest = obj.objectString.getBytes(StandardCharsets.US_ASCII);
+
+                    if (!EthersUtils.verifySignature(digest, obj.signature, publicKey))
                         throw new Exception("Signature doesn't match");
 
-                    String id = virus.publicKey.toString();
-                    System.out.println(id);
                     if (!Program.verify(virus)){
                         DOS.write(Tools.combine(
                         "0002".getBytes(StandardCharsets.UTF_16LE), 
@@ -120,7 +110,9 @@ public class Receive_from_socket_not_logged_in implements Runnable {
                         client.close();
                         return;
                     }
-                    int result = Program.addVirus(virus);
+                    String id = (new BigInteger(publicKey.getEncoded())).toString(16);
+                    System.out.println(id);
+                    int result = Program.addVirus(id, virus);
                     DOS.write(Tools.combine(
                         "0002".getBytes(StandardCharsets.UTF_16LE), 
                         Tools.data_with_ASCII_byte(Integer.toString(result)).getBytes(StandardCharsets.US_ASCII)
@@ -132,23 +124,26 @@ public class Receive_from_socket_not_logged_in implements Runnable {
                 else if (instruction.equals("0003")){
                     System.out.println("transfer");
                     String serialized = Tools.receive_ASCII_Automatically(DIS);
-                    //System.out.println(serialized);
+
                     Gson gson = new Gson();
                     SignedObject obj = gson.fromJson(serialized, SignedObject.class);
                     Transfer transfer = gson.fromJson(obj.objectString, Transfer.class);
 
-                    MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    byte[] digest = md.digest(obj.objectString.getBytes(StandardCharsets.US_ASCII));
+                    KeyFactory kf = KeyFactory.getInstance("EC");
+                    PublicKey publicKey = kf.generatePublic(transfer.senderPublicKey.getPublicKeySpec());
+
+                    byte[] digest = obj.objectString.getBytes(StandardCharsets.US_ASCII);
                     
                     // if sender public key can be used to verify this message is from the private key that sign this message
                     // then that mean sender public key is authorized
                     // otherwise this verify will fail if someone try to make someone else send money without their permission.
-                    if (!EthersUtils.verifyMessage(digest, obj.signature, transfer.senderPublicKey)) 
+                    if (!EthersUtils.verifySignature(digest, obj.signature, publicKey)) 
                         throw new Exception("Signature doesn't match");
-                    System.out.println(transfer.senderPublicKey);                    
-                    System.out.println(transfer.receiverPublicKey);
+                    String id = (new BigInteger(publicKey.getEncoded())).toString(16);
+                    System.out.println(id);                 
+                    System.out.println(transfer.receiverPublicBigInt.toString(16));
                     System.out.println(transfer.value);
-                    int result = Program.transfer(transfer);
+                    int result = Program.transfer(id, transfer);
                     DOS.write(Tools.combine(
                         "0003".getBytes(StandardCharsets.UTF_16LE), 
                         Tools.data_with_ASCII_byte(Integer.toString(result)).getBytes(StandardCharsets.US_ASCII)

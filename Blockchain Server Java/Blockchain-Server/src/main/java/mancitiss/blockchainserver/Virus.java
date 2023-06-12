@@ -1,8 +1,8 @@
 package mancitiss.blockchainserver;
 
-import java.math.BigInteger;
+import java.security.PublicKey;
 
 public class Virus {
-    BigInteger publicKey;
+    CustomECKeySpec publicKey;
     String virusSignature;
 }
