@@ -102,13 +102,16 @@ public class Program {
             return -1;
         }       
         if (!success) return -1;
-
+        System.out.println("Success");
         String[] arguments2 = new String[]{"kubectl" ,"exec", "-it", peer,  "--" ,"/bin/bash" ,"-c", "peer chaincode query -C channel1 -n cc -c \'{\"Args\":[\"query\",\"" + id + "\"]}\' "};
 
         Process proc2 = new ProcessBuilder(arguments2).start();
+        //try{Thread.sleep(6000);} catch(Exception ignored){}
         try (InputStream inputStream = proc2.getInputStream();
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
                     String line = bufferedReader.readLine();
+                    System.out.println("Reading line");
+                    System.out.println(line);
                     if (line != null && line.length() > 0) return Integer.parseInt(line);
                     return -1;
         } catch (Exception e) {
@@ -137,23 +140,18 @@ public class Program {
         String[] arguments2 = new String[]{"kubectl" ,"exec", "-it", peer,  "--" ,"/bin/bash" ,"-c", "peer chaincode query -C channel1 -n cc -c \'{\"Args\":[\"add\",\"" + id + "\"]}\' "};
         
         Process proc2 = new ProcessBuilder(arguments2).start();
-        try {
-            proc2.waitFor();
-            if (query(id) >= 0){
-                return 0;
-            }
-            else{
+        //proc2.waitFor();
+        try (InputStream inputStream = proc2.getInputStream();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+                String line = bufferedReader.readLine();
+                System.out.println("Reading line");
+                System.out.println(line);
+                if (line != null && line.length() > 0) return 0;
                 return -1;
-            }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
+            System.out.println(e);
             return -1;
         }
-        // try (InputStream inputStream = proc2.getInputStream();
-        //         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
-        //             String line = bufferedReader.readLine();
-        //             if (line != null) System.out.println("line: " + line);
-        //             if (line != null && line.length() > 0) return 0;
-        //             return -1;
 
         // } catch (Exception e) {
         //     System.out.println(e);
