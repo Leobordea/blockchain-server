@@ -211,9 +211,9 @@ public class test {
         Transfer transfer = new Transfer();
 
         transfer.senderPublicKey = CustomECKeySpec.getPublicKeySpec(keyPair);
-        transfer.receiverPublicBigInt = BigInteger.valueOf(0);
+        transfer.receiverPublicBigInt = BigInteger.valueOf(10);
 
-        int i = 0;
+        int i = 200;
         transfer.value = i;
         so.objectString = gson.toJson(transfer, Transfer.class);
 

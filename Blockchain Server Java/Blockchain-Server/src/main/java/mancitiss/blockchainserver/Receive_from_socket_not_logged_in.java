@@ -144,6 +144,7 @@ public class Receive_from_socket_not_logged_in implements Runnable {
                     System.out.println(transfer.receiverPublicBigInt.toString(16));
                     System.out.println(transfer.value);
                     int result = Program.transfer(id, transfer);
+                    System.out.println(result);
                     DOS.write(Tools.combine(
                         "0003".getBytes(StandardCharsets.UTF_16LE), 
                         Tools.data_with_ASCII_byte(Integer.toString(result)).getBytes(StandardCharsets.US_ASCII)

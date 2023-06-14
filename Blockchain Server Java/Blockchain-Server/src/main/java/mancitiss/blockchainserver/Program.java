@@ -173,7 +173,7 @@ public class Program {
         String[] arguments = new String[]{"kubectl" ,"exec", "-it", peer,  "--" ,"/bin/bash" ,"-c", "peer chaincode invoke -o blockchain-orderer:31010 -C channel1 -n cc -c \'{\"Args\":[\"addVirus\",\"" + id + "\", \"" + virus.virusSignature + "\"]}\' "};
         
         Process proc = new ProcessBuilder(arguments).start();
-
+        
         boolean success = false;
         try {
             success = proc.waitFor(20, TimeUnit.SECONDS);
@@ -208,7 +208,8 @@ public class Program {
         b = receiver.matches(Constants.ID_REGEX);
         if (!b) return -1;
         String peer = get_peer(Constants.PEER_REGEX);
-        String[] arguments = new String[]{"kubectl" ,"exec", "-it", peer,  "--" ,"/bin/bash" ,"-c", "peer chaincode invoke -o blockchain-orderer:31010 -C channel1 -n cc -c \'{\"Args\":[\"invoke\",\"" + sender + "\", \"" + receiver + "\", \"" + value + "\"]}\' "};
+        System.out.println(peer);
+        String[] arguments = new String[]{"kubectl" ,"exec", "-it", peer,  "--" ,"/bin/bash" ,"-c", "peer chaincode invoke -o blockchain-orderer:31010 -C channel1 -n cc -c \'{\"Args\":[\"invoke\",\"" + sender + "\", \"" + receiver + "\", \"" + value + "\"]}\'"};
         
         Process proc = new ProcessBuilder(arguments).start();
         
@@ -219,15 +220,19 @@ public class Program {
             e.printStackTrace();
             return -1;
         }       
+        System.out.println("im here");
         if (!success) return -1;
+        System.out.println("im here part 2");
 
-        String[] arguments2 = new String[]{"kubectl" ,"exec", "-it", peer,  "--" ,"/bin/bash" ,"-c", "peer chaincode query -C channel1 -n cc -c \'{\"Args\":[\"invoke\",\"" + sender + "\", \"" + receiver + "\", \"" + value + "\"]}\' "};
+        String[] arguments2 = new String[]{"kubectl" ,"exec", "-it", peer,  "--" ,"/bin/bash" ,"-c", "peer chaincode query -C channel1 -n cc -c \'{\"Args\":[\"invoke\",\"" + sender + "\", \"" + receiver + "\", \"" + value + "\"]}\'"};
         
         Process proc2 = new ProcessBuilder(arguments2).start();
         try (InputStream inputStream = proc2.getInputStream();
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
                     String line = bufferedReader.readLine();
+                    System.out.println("Im here part 3");
                     if (line != null && line.length() > 0) return 0;
+                    System.out.println("I shouldn't be here");
                     return -1;
 
         } catch (Exception e) {
@@ -252,6 +257,6 @@ public class Program {
             System.out.println(e);
         }
         int rd = rand.nextInt(list.size());
-        return list.get(rd);
+        return list.get(1);
     }
 }
